@@ -1,3 +1,10 @@
+/**
+ * ESP01 文件读写实验
+ * Django 2022-11-08
+ * Reference:  https://arduino-esp8266.readthedocs.io/en/latest/filesystem.html#sdfs-and-sd
+ *
+ */
+
 #include <FS.h>
 #include <string.h>
 
