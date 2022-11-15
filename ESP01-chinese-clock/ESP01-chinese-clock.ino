@@ -18,7 +18,9 @@ ESP8266WiFiMulti WiFiMulti;
 
 String weekDays[7] = {"日", "一", "二", "三", "四", "五", "六"};
 
-U8G2_SSD1306_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, 0, 2);
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, 0, 2);
+// Full buffer
+// U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, 0, 2);
 
 void connect_to_ap();
 
@@ -39,13 +41,13 @@ void setup(void)
   connect_to_ap();
   timeClient.begin();
   timeClient.setTimeOffset(28800);
-
-  u8g2.setFont(u8g2_font_unifont_t_chinese2); // use chinese2 for all the glyphs of "你好世界"
-  u8g2.setFontDirection(0);
 }
 
+u8g2_uint_t width, x_pos, colon_width;
+bool flash = true;
 void loop(void)
 {
+
   timeClient.update();
   time_t epochTime = timeClient.getEpochTime();
   String formattedTime = timeClient.getFormattedTime();
@@ -59,15 +61,40 @@ void loop(void)
   // String currentMonthName = months[currentMonth - 1];
   int currentYear = ptm->tm_year + 1900;
 
-  u8g2.firstPage();
-  do
+  u8g2.clearBuffer();
+  //  u8g2_font_10x20_tn
+  u8g2.setFont(u8g2_font_unifont_t_chinese2); // use chinese2 for all the glyphs of "你好世界"
+
+  // 处理剧中问题
+  char text[30];
+  snprintf(text, sizeof(text), "%d-%02d-%02d %s", currentYear, currentMonth, monthDay, weekDay);
+  width = u8g2.getUTF8Width(text);
+  u8g2.setCursor((u8g2.getDisplayWidth() - width) / 2, 15);
+  u8g2.printf(text);
+
+  u8g2.setFont(u8g2_font_mystery_quest_48_tn);
+  snprintf(text, sizeof(text), "%02d:%02d", currentHour, currentMinute);
+  width = u8g2.getUTF8Width(text);
+  x_pos = (u8g2.getDisplayWidth() - width) / 2;
+  u8g2.setCursor(x_pos, 63);
+  u8g2.printf(text);
+
+  // flash是否清空那个":"，起始位置+小时长度 到 冒号宽度 42像素高清空
+  if (flash)
   {
-    u8g2.setCursor(0, 15);
-    u8g2.printf("星期%s", weekDay);
-    u8g2.setCursor(0, 40);
-    u8g2.print("你好，我的世界～"); // Chinese "Hello World"
-    // u8g2.print("こんにちは世界");		// Japanese "Hello World"
-  } while (u8g2.nextPage());
+    flash = false;
+    snprintf(text, sizeof(text), "%02d", currentHour);
+    width = u8g2.getUTF8Width(text);
+    colon_width = u8g2.getUTF8Width(":");
+    u8g2.setDrawColor(0);
+    u8g2.drawBox(x_pos + width, 16, colon_width, 48);
+    u8g2.setDrawColor(1);
+  }
+  else
+  {
+    flash = true;
+  }
+  u8g2.sendBuffer();
   delay(1000);
 }
 
