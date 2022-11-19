@@ -42,10 +42,10 @@ export class Display {
     // this.lineWidth = (cvs.width / width) * LINE_LIGHT_RATIO;
     // 调整cvs的宽和高，实质内部的像素可以有整数。
     this.lineWidth = (cvs.width / (128 * (1 - LINE_LIGHT_RATIO) + 127 * LINE_LIGHT_RATIO)) * LINE_LIGHT_RATIO;
-    this.lineWidth = Math.floor(this.lineWidth);
-    cvs.width = this.lineWidth * 5 * 128 + this.lineWidth * 127;
-    cvs.height = cvs.width / (this.width / this.height);
-    console.log(this.lineWidth, this.lineWidth * 5 * 128 + this.lineWidth * 127);
+    // this.lineWidth = Math.floor(this.lineWidth);
+    // cvs.width = this.lineWidth * 5 * 128 + this.lineWidth * 127;
+    // cvs.height = cvs.width / (this.width / this.height);
+    //console.log(this.lineWidth, this.lineWidth * 5 * 128 + this.lineWidth * 127);
 
     this.ctx = cvs.getContext("2d")!;
     this.grid_width = cvs.width / width;

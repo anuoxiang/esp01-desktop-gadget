@@ -76,8 +76,9 @@ void loop(void)
   snprintf(text, sizeof(text), "%02d:%02d", currentHour, currentMinute);
   width = u8g2.getUTF8Width(text);
   x_pos = (u8g2.getDisplayWidth() - width) / 2;
-  u8g2.setCursor(x_pos, 53);
-  u8g2.printf(text);
+  // u8g2.setCursor(x_pos, 53);
+  // u8g2.printf(text);
+  u8g2.drawUTF8(x_pos, 53, text);
 
   // flash是否清空那个":"，起始位置+小时长度 到 冒号宽度 42像素高清空
   if (flash)
@@ -109,7 +110,22 @@ void loop(void)
   // u8g2.drawUTF8(96, 63, "2");
   u_long begin = millis();
   u8g2.sendBuffer();
-  Serial.printf("%d\n", millis() - begin);
+  // Serial.printf("%d\n", millis() - begin);
+
+  // 滚动动画
+  u8g2.setFont(u8g2_font_mystery_quest_48_tn);
+  snprintf(text, sizeof(text), "%02d:%02d", currentHour, currentMinute);
+  width = u8g2.getUTF8Width(text);
+  x_pos = (u8g2.getDisplayWidth() - width) / 2;
+  int16_t offset = 0;
+  do
+  {
+    u8g2.clearBuffer();
+    u8g2.drawUTF8(x_pos - offset, 53, text);
+    u8g2.updateDisplayArea(0, 2, 16, 5);
+    offset += 3;
+  } while (x_pos - offset + width > 0);
+
   delay(1000);
 }
 

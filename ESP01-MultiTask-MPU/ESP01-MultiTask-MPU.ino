@@ -12,6 +12,8 @@
  * 2. 每过一个时间间隔，将屏幕滚动显示
  */
 
+// MPU i2c address 0x68
+
 #define countof(a) (sizeof(a) / sizeof(a[0]))
 
 // using RUN = std::function<void()>;
