@@ -1,9 +1,0 @@
----
-Language: Cpp
-# BasedOnStyle:  LLVM
-
-AlignConsecutiveDeclarations: true
-AlignConsecutiveMacros:
-  Enabled: true
-  AcrossEmptyLines: true
-  AcrossComments: true

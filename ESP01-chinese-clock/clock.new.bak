@@ -2,8 +2,9 @@
 #include <U8g2lib.h>
 #include <Wire.h>
 #include <ESP8266WiFi.h>
-#include <NTPClient.h>
+// #include <NTPClient.h>
 #include <time.h>
+
 #include <WiFiUdp.h>
 #include <ESP8266WiFiMulti.h>
 #include <ESP8266HTTPClient.h>
@@ -15,11 +16,9 @@
 #define DAY_LIGHT_OFFSET_SEC 0
 
 WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, NTPSERVER);
+// NTPClient timeClient(ntpUDP, NTPSERVER);
 ESP8266WiFiMulti WiFiMulti;
-
 String weekDays[7] = {"日", "一", "二", "三", "四", "五", "六"};
-
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, 0, 2);
 // Full buffer
 // U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, 0, 2);
@@ -28,6 +27,7 @@ void connect_to_ap();
 
 void setup(void)
 {
+  Serial.begin(115200);
   if (!u8g2.begin())
   {
     Serial.println("u8g2 failed.");
@@ -35,21 +35,14 @@ void setup(void)
       ;
   }
   u8g2.enableUTF8Print(); // enable UTF8 support for the Arduino print() function
-                          // 串口通信设置
-  Serial.begin(115200);
+  // 串口通信设置
+
   // IIC 通信设置
   Wire.begin(2, 0);
 
   connect_to_ap();
+  //
   configTime(SHANGHAI, DAY_LIGHT_OFFSET_SEC, NTPSERVER);
-  time_t rawtime;
-  struct tm *timeinfo;
-  time(&rawtime);
-  timeinfo = localtime(&rawtime);
-  Serial.println(asctime(timeinfo));
-  delay(1000);
-  WiFi.disconnect(true);
-  WiFi.mode(WIFI_OFF);
   // timeClient.begin();
   // timeClient.setTimeOffset(28800);
 }
@@ -58,7 +51,6 @@ u8g2_uint_t width, x_pos, colon_width;
 bool flash = true;
 void loop(void)
 {
-
   // timeClient.update();
   // time_t epochTime = timeClient.getEpochTime();
   // String formattedTime = timeClient.getFormattedTime();
@@ -69,19 +61,17 @@ void loop(void)
   // struct tm *ptm = gmtime((time_t *)&epochTime);
   // int monthDay = ptm->tm_mday;
   // int currentMonth = ptm->tm_mon + 1;
-  // // String currentMonthName = months[currentMonth - 1];
+  // String currentMonthName = months[currentMonth - 1];
   // int currentYear = ptm->tm_year + 1900;
 
   time_t rawtime;
   struct tm *timeinfo;
   time(&rawtime);
   timeinfo = localtime(&rawtime);
-  // Serial.printf("%d-%d %d", timeinfo->tm_hour);
-  // Serial.println(asctime(timeinfo));
-  int currentYear = timeinfo->tm_year + 1900;
-  int currentMonth = timeinfo->tm_mon + 1;
+  int currentYear = timeinfo->tm_year;
+  int currentMonth = timeinfo->tm_mon;
   int monthDay = timeinfo->tm_mday;
-  String weekDay = weekDays[timeinfo->tm_wday];
+  int weekDay = timeinfo->tm_wday;
   int currentHour = timeinfo->tm_hour;
   int currentMinute = timeinfo->tm_min;
 
@@ -137,18 +127,18 @@ void loop(void)
   // Serial.printf("%d\n", millis() - begin);
 
   // 滚动动画
-  // u8g2.setFont(u8g2_font_mystery_quest_48_tn);
-  // snprintf(text, sizeof(text), "%02d:%02d", currentHour, currentMinute);
-  // width = u8g2.getUTF8Width(text);
-  // x_pos = (u8g2.getDisplayWidth() - width) / 2;
-  // int16_t offset = 0;
-  // do
-  // {
-  //   u8g2.clearBuffer();
-  //   u8g2.drawUTF8(x_pos - offset, 53, text);
-  //   u8g2.updateDisplayArea(0, 2, 16, 5);
-  //   offset += 3;
-  // } while (x_pos - offset + width > 0);
+  u8g2.setFont(u8g2_font_mystery_quest_48_tn);
+  snprintf(text, sizeof(text), "%02d:%02d", currentHour, currentMinute);
+  width = u8g2.getUTF8Width(text);
+  x_pos = (u8g2.getDisplayWidth() - width) / 2;
+  int16_t offset = 0;
+  do
+  {
+    u8g2.clearBuffer();
+    u8g2.drawUTF8(x_pos - offset, 53, text);
+    u8g2.updateDisplayArea(0, 2, 16, 5);
+    offset += 3;
+  } while (x_pos - offset + width > 0);
 
   delay(1000);
 }
@@ -164,8 +154,8 @@ void connect_to_ap()
 
   // 载入（或者使用Smart Config) AP 账号
   WiFi.mode(WIFI_STA);
-  //  WiFi.begin(SSID, PSK);
-  WiFiMulti.addAP(SSID, PSK);
+  WiFi.begin(SSID, PSK);
+  // WiFiMulti.addAP(SSID, PSK);
   /**
      直到连接到AP上，退出过程。
      如果太长时间没有连上Wifi，考虑是更换了场所，
@@ -174,5 +164,7 @@ void connect_to_ap()
   while (WiFiMulti.run() != WL_CONNECTED)
   {
     Serial.print(".");
+    delay(100);
   }
+  Serial.printf("\nLocalIP:%s ,GateIP:%s\n", WiFi.localIP(), WiFi.gatewayIP());
 }
