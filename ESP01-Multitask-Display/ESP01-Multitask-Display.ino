@@ -4,10 +4,17 @@
  * 主题：在单核的芯片中执行多任务。
  *      相比MPU的分支：多一个判断显示屏是否输出，并且将单链进程池管理改为数组
  */
+#include <U8g2lib.h>
+#include <Wire.h>
+#include <Arduino.h>
+#include <U8g2lib.h>
 #include "clock.h"
 
 // 计算数组尺寸
 #define countof(a) (sizeof(a) / sizeof(a[0]))
+
+// 显示屏类库
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, 0, 2);
 
 enum PSTATUS
 {
@@ -46,6 +53,14 @@ uint8_t start_new_process(ulong period, PSTATUS status, void(*run));
 void setup()
 {
   Serial.begin(115200);
+  if (!u8g2.begin())
+  {
+    Serial.println("u8g2 failed.");
+    for (;;)
+      ;
+  }
+  u8g2.enableUTF8Print();
+  Wire.begin(2, 0);
 }
 
 // 任务管理的轮询过程
