@@ -1,4 +1,7 @@
 #include "clock.h"
+WiFiUDP ntpUDP;
+ESP8266WiFiMulti WiFiMulti;
+String weekDays[7] = {"日", "一", "二", "三", "四", "五", "六"};
 
 void clock_setup()
 {
@@ -35,7 +38,7 @@ void connect_to_ap()
   }
 }
 
-void clock_main(U8G2_SSD1306_128X64_NONAME_F_HW_I2C &u8g2)
+uint8_t clock_main()
 {
   time_t rawtime;
   struct tm *timeinfo;
@@ -49,4 +52,8 @@ void clock_main(U8G2_SSD1306_128X64_NONAME_F_HW_I2C &u8g2)
   String weekDay = weekDays[timeinfo->tm_wday];
   int currentHour = timeinfo->tm_hour;
   int currentMinute = timeinfo->tm_min;
+
+  u8g2.beginSimple();
+
+  return 1;
 }

@@ -1,3 +1,6 @@
+#ifndef _Clock_H_
+#define _Clock_H_
+
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include <Wire.h>
@@ -13,12 +16,7 @@
 #define SHANGHAI 28800
 #define DAY_LIGHT_OFFSET_SEC 0
 
-WiFiUDP ntpUDP;
-ESP8266WiFiMulti WiFiMulti;
-
-String weekDays[7] = {"日", "一", "二", "三", "四", "五", "六"};
-
-// U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, 0, 2);
+extern U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2;
 
 // 是否完成设置
 static bool b_clock_setup = false;
@@ -30,4 +28,6 @@ void clock_setup();
 void connect_to_ap();
 
 // 主过程
-void clock_main();
+uint8_t clock_main();
+
+#endif

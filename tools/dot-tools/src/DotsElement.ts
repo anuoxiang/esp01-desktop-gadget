@@ -32,6 +32,9 @@ export enum ElementType {
 
 /**
  * 点阵元素
+ * 点阵的对象操作实体；目的是当形成对象后，用户可以很方便地通过拖拽的方式设计显示界面的布局，
+ * 也可以通过单独输出逻辑控制，将屏幕中的元素与主程序解耦，实现更高程度的复用。
+ *
  */
 export class DotsElement {
   pos: Position;

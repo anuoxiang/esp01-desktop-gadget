@@ -1,0 +1,5 @@
+{
+  "output": ".build",
+  "board": "arduino:avr:uno",
+  "sketch": "common-include.ino"
+}

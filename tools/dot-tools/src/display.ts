@@ -3,6 +3,8 @@
  * Django 2022-11-16
  */
 
+import { DotsElement } from "./DotsElement";
+
 // 网格线与灯的宽度比例，1线5灯
 const LINE_LIGHT_RATIO = 1 / 6;
 // 网格线颜色
@@ -18,7 +20,12 @@ export class Display {
   public readonly ctx: CanvasRenderingContext2D;
   // 网格尺寸
   public readonly grid_width: number;
+  // 当前激活状态的元素对象
+  public current_element?: DotsElement;
+  // 在画布上的所有元素
+  public elements: DotsElement[] = [];
 
+  private dragMode: Boolean = false;
   /**
    * 显示屏模拟
    * @param cvs Canvas 画布元素
@@ -49,30 +56,10 @@ export class Display {
 
     this.ctx = cvs.getContext("2d")!;
     this.grid_width = cvs.width / width;
-    console.log(cvs.width, cvs.height);
-
-    // 画线
-
-    this.ctx.fillStyle = "black";
-    this.ctx.fillRect(0, 0, cvs.width, cvs.height);
-    this.ctx.lineWidth = this.lineWidth;
-
-    this.ctx.beginPath();
-    this.ctx.strokeStyle = LINE_COLOR;
-    for (let i = 0; i < this.width - 1; i++) {
-      this.ctx.moveTo((1 + i) * this.grid_width, 0);
-      this.ctx.lineTo((1 + i) * this.grid_width, cvs.height);
-    }
-    this.ctx.stroke();
-
-    for (let i = 0; i < this.height - 1; i++) {
-      this.ctx.beginPath();
-      this.ctx.strokeStyle = this.dual_color && i === 15 ? LINE_COLOR_2 : LINE_COLOR;
-      this.ctx.moveTo(0, (i + 1) * this.grid_width);
-      this.ctx.lineTo(cvs.width, (i + 1) * this.grid_width);
-      this.ctx.stroke();
-    }
+    console.log(cvs.width, cvs.height);    
     console.log("??");
+    this.initGrid();
+
     cvs.addEventListener("click", ({ offsetX, offsetY }) => {
       console.log("click");
       // let x = offsetX
@@ -89,7 +76,32 @@ export class Display {
     });
   }
 
-  // 响应鼠标的点击事件
+  // 初始化网格
+  public initGrid():void {
+    // 画线
+    this.ctx.fillStyle = "black";
+    this.ctx.fillRect(0, 0, this.cvs.width, this.cvs.height);
+    this.ctx.lineWidth = this.lineWidth;
+
+    this.ctx.beginPath();
+    this.ctx.strokeStyle = LINE_COLOR;
+    for (let i = 0; i < this.width - 1; i++) {
+      this.ctx.moveTo((1 + i) * this.grid_width, 0);
+      this.ctx.lineTo((1 + i) * this.grid_width, this.cvs.height);
+    }
+    this.ctx.stroke();
+
+    for (let i = 0; i < this.height - 1; i++) {
+      this.ctx.beginPath();
+      this.ctx.strokeStyle = this.dual_color && i === 15 ? LINE_COLOR_2 : LINE_COLOR;
+      this.ctx.moveTo(0, (i + 1) * this.grid_width);
+      this.ctx.lineTo(this.cvs.width, (i + 1) * this.grid_width);
+      this.ctx.stroke();
+    }
+  }
+
+  // 绘制所有元素
+  public drawElements(){}
 }
 
 // function clickDot(ctx:CanvasRenderingContext2D):
