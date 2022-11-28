@@ -4,7 +4,8 @@
 MPU6050 accelgyro;
 int16_t ax, ay, az, gx, gy, gz;
 uint16_t dt = 3000;
-void setup() {
+void setup()
+{
   Wire.begin(2, 0);
   Serial.begin(115200);
   Serial.println("Initializing I2C devices...");
@@ -13,24 +14,34 @@ void setup() {
   Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
 }
 
-void loop() {
+void loop()
+{
   accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
   //  Serial.printf("aX:%d\taY:%d\taZ:%d\tgX:%d\tgY:%d\tgZ:%d\n",ax,ay,az,gx,gy,gz);
-//    Serial.printf("aX:%d\taY:%d\n", gx, gy);
+  //    Serial.printf("aX:%d\taY:%d\n", gx, gy);
 
-  if (gx > 20000) {
+  if (gx > 20000)
+  {
     Serial.println("Left");
     dt = 2000;
-  } else if (gx < -20000) {
+  }
+  else if (gx < -20000)
+  {
     Serial.println("Right");
     dt = 2000;
-  } else if (gy > 20000) {
+  }
+  else if (gy > 20000)
+  {
     Serial.println("Down");
     dt = 2000;
-  } else if (gy < -20000) {
+  }
+  else if (gy < -20000)
+  {
     Serial.println("Up");
     dt = 2000;
-  } else {
+  }
+  else
+  {
     dt = 100;
   }
 

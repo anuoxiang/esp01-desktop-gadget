@@ -9,7 +9,7 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include "clock.h"
-
+#include "mpu.h"
 // 计算数组尺寸
 #define countof(a) (sizeof(a) / sizeof(a[0]))
 #define TIME_SLICE 50
@@ -53,12 +53,6 @@ static uint8_t process_num = 0;
 
 uint8_t start_new_process(unsigned long period, int8_t (*run)(void), uint8_t priority);
 
-int8_t test(void)
-{
-  Serial.println("Hello world");
-  return 1;
-}
-
 void setup()
 {
   Serial.begin(115200);
@@ -71,7 +65,8 @@ void setup()
   u8g2.enableUTF8Print();
   Wire.begin(2, 0);
 
-  start_new_process(700, &test, 1);
+  start_new_process(1000, &clock_main, 1);
+  start_new_process(100, &mpu_main, 1);
 }
 
 static ulong now = 0;

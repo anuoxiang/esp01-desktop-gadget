@@ -19,7 +19,7 @@
 extern U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2;
 
 // 是否完成设置
-static bool b_clock_setup = false;
+// static bool b_clock_setup = false;
 
 // 设置过程
 void clock_setup();
@@ -28,6 +28,6 @@ void clock_setup();
 void connect_to_ap();
 
 // 主过程
-uint8_t clock_main();
+int8_t clock_main();
 
 #endif
