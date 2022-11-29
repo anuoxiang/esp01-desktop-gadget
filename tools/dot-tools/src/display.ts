@@ -25,7 +25,6 @@ export class Display {
   // 在画布上的所有元素
   public elements: DotsElement[] = [];
 
-  private dragMode: Boolean = false;
   /**
    * 显示屏模拟
    * @param cvs Canvas 画布元素
@@ -56,28 +55,81 @@ export class Display {
 
     this.ctx = cvs.getContext("2d")!;
     this.grid_width = cvs.width / width;
-    console.log(cvs.width, cvs.height);    
+    console.log(cvs.width, cvs.height);
     console.log("??");
     this.initGrid();
+    this.bindMouse();
 
-    cvs.addEventListener("click", ({ offsetX, offsetY }) => {
-      console.log("click");
-      // let x = offsetX
-      // 喷涂这个像素点区域的颜色，注意：需要把网格线的宽度考虑进去。
-      let x = Math.floor(offsetX / this.grid_width),
-        y = Math.floor(offsetY / this.grid_width);
-      this.ctx.fillStyle = this.color;
-      this.ctx.fillRect(
-        x * this.grid_width + (x === 0 ? 0 : this.lineWidth / 2),
-        y * this.grid_width + (y === 0 ? 0 : this.lineWidth / 2),
-        this.grid_width - (x === 0 ? this.lineWidth / 2 : this.lineWidth),
-        this.grid_width - (y === 0 ? this.lineWidth / 2 : this.lineWidth)
-      );
+    // cvs.addEventListener("click", ({ offsetX, offsetY }) => {
+    //   console.log("click");
+    //   // let x = offsetX
+    //   // 喷涂这个像素点区域的颜色，注意：需要把网格线的宽度考虑进去。
+    //   let x = Math.floor(offsetX / this.grid_width),
+    //     y = Math.floor(offsetY / this.grid_width);
+    //   this.ctx.fillStyle = this.color;
+    //   this.ctx.fillRect(
+    //     x * this.grid_width + (x === 0 ? 0 : this.lineWidth / 2),
+    //     y * this.grid_width + (y === 0 ? 0 : this.lineWidth / 2),
+    //     this.grid_width - (x === 0 ? this.lineWidth / 2 : this.lineWidth),
+    //     this.grid_width - (y === 0 ? this.lineWidth / 2 : this.lineWidth)
+    //   );
+    // });
+  }
+
+  // 是否进入检测拖动模式，即：mousedown之后就是mousemove
+  private detectMouse: Boolean = false;
+
+  // 是否为单击模式，当出现dragMode时，mouseup同时也会触发click，使其无效
+  private singleClick: Boolean = true;
+
+  // 绑定鼠标的拖动与点击操作
+  private bindMouse() {
+    // 点按并拖动的基础点
+    let basePoint: Point;
+    let lastOffset: Point;
+
+    // 鼠标按下
+    this.cvs.addEventListener("mousedown", ({ offsetX, offsetY }) => {
+      this.detectMouse = true;
+      basePoint = new Point(offsetX, offsetY, this.grid_width);
+    });
+    // 鼠标松开
+    this.cvs.addEventListener("mouseup", () => {
+      this.detectMouse = false;
+      setTimeout(() => {
+        this.singleClick = true;
+      }, 1); // 统一瞬间触发，难保证click与up谁先谁后；
+      // basePoint to lastOffset 形成一个元素区域
+    });
+    // 鼠标移动
+    this.cvs.addEventListener("mousemove", ({ offsetX, offsetY }) => {
+      if (!this.detectMouse) return;
+      this.singleClick = false;
+      let offset = new Point(offsetX - basePoint.X, offsetY - basePoint.Y, this.grid_width);
+
+      // 只有当移动超过一个方格的时候才有必要重绘
+      if (lastOffset?.X == offset.X && lastOffset?.Y == offset.Y) return;
+      lastOffset = offset;
+      this.initGrid();
+      let rect = new Path2D();
+      rect.rect(basePoint.X, basePoint.Y, offset.X, offset.Y);
+      this.ctx.strokeStyle = "#fe9901";
+      this.ctx.lineWidth = 1;
+      this.ctx.stroke(rect);
+      console.log("redraw");
+    });
+    // 鼠标单击（拖动或者单击，只能出现一个动作）
+    this.cvs.addEventListener("click", ({ offsetX, offsetY }) => {
+      if (!this.singleClick) {
+        this.singleClick = true;
+        return;
+      }
+      console.log(offsetX, offsetY);
     });
   }
 
   // 初始化网格
-  public initGrid():void {
+  public initGrid(): void {
     // 画线
     this.ctx.fillStyle = "black";
     this.ctx.fillRect(0, 0, this.cvs.width, this.cvs.height);
@@ -101,7 +153,35 @@ export class Display {
   }
 
   // 绘制所有元素
-  public drawElements(){}
+  public drawElements() {}
 }
 
-// function clickDot(ctx:CanvasRenderingContext2D):
+/**
+ * 坐标
+ */
+class Point {
+  private _x: number;
+  private _y: number;
+  private grid_width: number;
+  constructor(X: number = 0, Y: number = 0, gridWidth: number = 0) {
+    this._x = X;
+    this._y = Y;
+    this.grid_width = gridWidth;
+  }
+
+  get X(): number {
+    if (this.grid_width > 0) {
+      return Math.round(this._x / this.grid_width) * this.grid_width;
+    } else {
+      return this._x;
+    }
+  }
+
+  get Y() {
+    if (this.grid_width > 0) {
+      return Math.round(this._y / this.grid_width) * this.grid_width;
+    } else {
+      return this._y;
+    }
+  }
+}
