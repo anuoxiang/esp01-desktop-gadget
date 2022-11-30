@@ -4,6 +4,7 @@
  */
 
 import { DotsElement } from "./DotsElement";
+import { Position } from "./gadgets";
 
 // 网格线与灯的宽度比例，1线5灯
 const LINE_LIGHT_RATIO = 1 / 6;
@@ -21,7 +22,7 @@ export class Display {
   // 网格尺寸
   public readonly grid_width: number;
   // 当前激活状态的元素对象
-  public current_element?: DotsElement;
+  public selectedElement: number = -1;
   // 在画布上的所有元素
   public elements: DotsElement[] = [];
 
@@ -85,13 +86,30 @@ export class Display {
   // 绑定鼠标的拖动与点击操作
   private bindMouse() {
     // 点按并拖动的基础点
-    let basePoint: Point;
-    let lastOffset: Point;
+    let basePoint: Position;
+    let lastOffset: Position;
+    // 被当前拖动的元素
+    let movingElement: number = -1;
 
     // 鼠标按下
     this.cvs.addEventListener("mousedown", ({ offsetX, offsetY }) => {
       this.detectMouse = true;
-      basePoint = new Point(offsetX, offsetY, this.grid_width);
+      basePoint = new Position(offsetX, offsetY, this.grid_width);
+      lastOffset = basePoint;
+      // 判断当前坐标有没有元素
+      for (let element of this.elements) {
+        if (element.here(basePoint)) {
+          movingElement = this.elements.indexOf(element);
+          break;
+        }
+      }
+      if (movingElement < 0) {
+        // 没有任何内容，可以开始建立元素框
+        this.selectedElement = -1;
+      } else {
+        // 表示选中这个元素，并开始拖动
+        console.log("lllll", movingElement);
+      }
     });
     // 鼠标松开
     this.cvs.addEventListener("mouseup", () => {
@@ -100,23 +118,57 @@ export class Display {
         this.singleClick = true;
       }, 1); // 统一瞬间触发，难保证click与up谁先谁后；
       // basePoint to lastOffset 形成一个元素区域
+      // 判断是新建一个元素，还是拖动的元素
+      if (movingElement < 0) {
+        if (basePoint.X === lastOffset.X || basePoint.Y === lastOffset.Y) {
+          // 在头一条直线上的，没有面积，所以不做任何动作（仅重绘）
+        } else {
+          let element = new DotsElement(basePoint, lastOffset);
+          this.elements.push(element);
+        }
+        this.reDraw();
+      } else {
+        // 移动元素结束
+        movingElement = -1;
+      }
     });
     // 鼠标移动
     this.cvs.addEventListener("mousemove", ({ offsetX, offsetY }) => {
       if (!this.detectMouse) return;
       this.singleClick = false;
-      let offset = new Point(offsetX - basePoint.X, offsetY - basePoint.Y, this.grid_width);
 
+      let offset = new Position(offsetX, offsetY, this.grid_width);
       // 只有当移动超过一个方格的时候才有必要重绘
       if (lastOffset?.X == offset.X && lastOffset?.Y == offset.Y) return;
+
+      // 检测是拖动还是框选
+      if (movingElement < 0) {
+        this.reDraw();
+        let rect = new Path2D();
+        rect.rect(basePoint.X, basePoint.Y, offset.X - basePoint.X, offset.Y - basePoint.Y);
+        this.ctx.strokeStyle = "#fe9901";
+        this.ctx.lineWidth = 1;
+        this.ctx.stroke(rect);
+      } else {
+        this.selectedElement = movingElement;
+        this.reDraw();
+        this.elements[this.selectedElement].pos = new Position(
+          this.elements[this.selectedElement].pos.X - (lastOffset.X - offset.X),
+          this.elements[this.selectedElement].pos.Y - (lastOffset.Y - offset.Y)
+        );
+        let rect = new Path2D();
+        rect.rect(
+          this.elements[this.selectedElement].pos.X,
+          this.elements[this.selectedElement].pos.Y,
+          this.elements[this.selectedElement].box.width,
+          this.elements[this.selectedElement].box.height
+        );
+        this.ctx.strokeStyle = "#fe9901";
+        this.ctx.lineWidth = 1;
+        this.ctx.stroke(rect);
+      }
+
       lastOffset = offset;
-      this.initGrid();
-      let rect = new Path2D();
-      rect.rect(basePoint.X, basePoint.Y, offset.X, offset.Y);
-      this.ctx.strokeStyle = "#fe9901";
-      this.ctx.lineWidth = 1;
-      this.ctx.stroke(rect);
-      console.log("redraw");
     });
     // 鼠标单击（拖动或者单击，只能出现一个动作）
     this.cvs.addEventListener("click", ({ offsetX, offsetY }) => {
@@ -126,6 +178,11 @@ export class Display {
       }
       console.log(offsetX, offsetY);
     });
+  }
+
+  public reDraw(): void {
+    this.initGrid();
+    this.drawElements();
   }
 
   // 初始化网格
@@ -153,35 +210,15 @@ export class Display {
   }
 
   // 绘制所有元素
-  public drawElements() {}
-}
-
-/**
- * 坐标
- */
-class Point {
-  private _x: number;
-  private _y: number;
-  private grid_width: number;
-  constructor(X: number = 0, Y: number = 0, gridWidth: number = 0) {
-    this._x = X;
-    this._y = Y;
-    this.grid_width = gridWidth;
-  }
-
-  get X(): number {
-    if (this.grid_width > 0) {
-      return Math.round(this._x / this.grid_width) * this.grid_width;
-    } else {
-      return this._x;
-    }
-  }
-
-  get Y() {
-    if (this.grid_width > 0) {
-      return Math.round(this._y / this.grid_width) * this.grid_width;
-    } else {
-      return this._y;
+  public drawElements() {
+    // 除了当前选中的不画
+    for (let element of this.elements) {
+      if (this.selectedElement == this.elements.indexOf(element)) continue;
+      let rect = new Path2D();
+      rect.rect(element.pos.X, element.pos.Y, element.box.width, element.box.height);
+      this.ctx.strokeStyle = "#fe9901";
+      this.ctx.lineWidth = 1;
+      this.ctx.stroke(rect);
     }
   }
 }

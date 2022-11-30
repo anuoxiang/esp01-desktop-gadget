@@ -1,26 +1,4 @@
-/**
- * 座标点位置对象（只有XY）
- */
-export class Position {
-  x: number;
-  y: number;
-  constructor(_x: number, _y: number) {
-    this.x = _x;
-    this.y = _y;
-  }
-}
-
-/**
- * 盒子对象（只有长宽）
- */
-export class Box {
-  width: number;
-  height: number;
-  constructor(_w: number, _h: number) {
-    this.width = _w;
-    this.height = _h;
-  }
-}
+import { Box, Position } from "./gadgets";
 
 // 元素类型
 export enum ElementType {
@@ -53,9 +31,10 @@ export class DotsElement {
   // 人工赋予的名称
   name: string = "";
 
-  constructor(_x?: number, _y?: number, _w?: number, _h?: number) {
-    this.pos = new Position(_x ?? 0, _y ?? 0);
-    this.box = new Box(_w ?? 0, _h ?? 0);
+  constructor(p1: Position, p2: Position) {
+    // 判断起点（坐标值小的）和重点
+    this.pos = new Position(p1.X > p2.X ? p2.X : p1.X, p1.Y > p2.Y ? p2.Y : p1.Y);
+    this.box = new Box(Math.abs(p1.X - p2.X), Math.abs(p1.Y - p2.Y));
     this.id = "";
   }
 
@@ -70,5 +49,15 @@ export class DotsElement {
       : this.animate
       ? ElementType.ANIMATE
       : ElementType.DOTS;
+  }
+
+  // 是否在元素的区域中科技以
+  public here(_pos: Position): Boolean {
+    return (
+      _pos.X >= this.pos.X &&
+      _pos.Y >= this.pos.Y &&
+      _pos.X <= this.pos.X + this.box.width &&
+      _pos.Y <= this.pos.Y + this.box.height
+    );
   }
 }
