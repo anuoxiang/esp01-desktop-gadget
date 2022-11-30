@@ -8,9 +8,14 @@ import { Position } from "./gadgets";
 
 // 网格线与灯的宽度比例，1线5灯
 const LINE_LIGHT_RATIO = 1 / 6;
-// 网格线颜色
-const LINE_COLOR: string = "rgb(128,128,128)";
-const LINE_COLOR_2: string = "rgb(192,192,192)";
+
+// 配色
+const COLOR_BACKGROUND = "black";
+const COLOR_LINE = "#888888";
+const COLOR_LINE2 = "#CCCCCC";
+const COLOR_ELEMENT_BOX = "#FBC228";
+const COLOR_CURRENT_ELEMENT_BOX = "#01CAFF";
+
 /**
  * 模拟OLED屏幕
  */
@@ -97,19 +102,23 @@ export class Display {
       basePoint = new Position(offsetX, offsetY, this.grid_width);
       lastOffset = basePoint;
       // 判断当前坐标有没有元素
+      movingElement = -1;
       for (let element of this.elements) {
         if (element.here(basePoint)) {
           movingElement = this.elements.indexOf(element);
           break;
         }
       }
+
       if (movingElement < 0) {
         // 没有任何内容，可以开始建立元素框
         this.selectedElement = -1;
       } else {
         // 表示选中这个元素，并开始拖动
-        console.log("lllll", movingElement);
+        this.selectedElement = movingElement;
       }
+      this.reDraw();
+      this.drawSelected();
     });
     // 鼠标松开
     this.cvs.addEventListener("mouseup", () => {
@@ -120,13 +129,15 @@ export class Display {
       // basePoint to lastOffset 形成一个元素区域
       // 判断是新建一个元素，还是拖动的元素
       if (movingElement < 0) {
+        this.reDraw();
         if (basePoint.X === lastOffset.X || basePoint.Y === lastOffset.Y) {
           // 在头一条直线上的，没有面积，所以不做任何动作（仅重绘）
         } else {
           let element = new DotsElement(basePoint, lastOffset);
           this.elements.push(element);
+          this.selectedElement = this.elements.length - 1;
+          this.drawSelected();
         }
-        this.reDraw();
       } else {
         // 移动元素结束
         movingElement = -1;
@@ -146,7 +157,7 @@ export class Display {
         this.reDraw();
         let rect = new Path2D();
         rect.rect(basePoint.X, basePoint.Y, offset.X - basePoint.X, offset.Y - basePoint.Y);
-        this.ctx.strokeStyle = "#fe9901";
+        this.ctx.strokeStyle = COLOR_CURRENT_ELEMENT_BOX;
         this.ctx.lineWidth = 1;
         this.ctx.stroke(rect);
       } else {
@@ -156,16 +167,7 @@ export class Display {
           this.elements[this.selectedElement].pos.X - (lastOffset.X - offset.X),
           this.elements[this.selectedElement].pos.Y - (lastOffset.Y - offset.Y)
         );
-        let rect = new Path2D();
-        rect.rect(
-          this.elements[this.selectedElement].pos.X,
-          this.elements[this.selectedElement].pos.Y,
-          this.elements[this.selectedElement].box.width,
-          this.elements[this.selectedElement].box.height
-        );
-        this.ctx.strokeStyle = "#fe9901";
-        this.ctx.lineWidth = 1;
-        this.ctx.stroke(rect);
+        this.drawSelected();
       }
 
       lastOffset = offset;
@@ -188,12 +190,12 @@ export class Display {
   // 初始化网格
   public initGrid(): void {
     // 画线
-    this.ctx.fillStyle = "black";
+    this.ctx.fillStyle = COLOR_BACKGROUND;
     this.ctx.fillRect(0, 0, this.cvs.width, this.cvs.height);
     this.ctx.lineWidth = this.lineWidth;
 
     this.ctx.beginPath();
-    this.ctx.strokeStyle = LINE_COLOR;
+    this.ctx.strokeStyle = COLOR_LINE;
     for (let i = 0; i < this.width - 1; i++) {
       this.ctx.moveTo((1 + i) * this.grid_width, 0);
       this.ctx.lineTo((1 + i) * this.grid_width, this.cvs.height);
@@ -202,7 +204,7 @@ export class Display {
 
     for (let i = 0; i < this.height - 1; i++) {
       this.ctx.beginPath();
-      this.ctx.strokeStyle = this.dual_color && i === 15 ? LINE_COLOR_2 : LINE_COLOR;
+      this.ctx.strokeStyle = this.dual_color && i === 15 ? COLOR_LINE2 : COLOR_LINE;
       this.ctx.moveTo(0, (i + 1) * this.grid_width);
       this.ctx.lineTo(this.cvs.width, (i + 1) * this.grid_width);
       this.ctx.stroke();
@@ -216,9 +218,19 @@ export class Display {
       if (this.selectedElement == this.elements.indexOf(element)) continue;
       let rect = new Path2D();
       rect.rect(element.pos.X, element.pos.Y, element.box.width, element.box.height);
-      this.ctx.strokeStyle = "#fe9901";
+      this.ctx.strokeStyle = COLOR_ELEMENT_BOX;
       this.ctx.lineWidth = 1;
       this.ctx.stroke(rect);
     }
+  }
+
+  public drawSelected() {
+    if (this.selectedElement < 0) return;
+    let element = this.elements[this.selectedElement];
+    let rect = new Path2D();
+    rect.rect(element.pos.X, element.pos.Y, element.box.width, element.box.height);
+    this.ctx.strokeStyle = COLOR_CURRENT_ELEMENT_BOX;
+    this.ctx.lineWidth = 1;
+    this.ctx.stroke(rect);
   }
 }
