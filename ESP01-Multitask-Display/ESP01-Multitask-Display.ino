@@ -8,6 +8,7 @@
 #include <Wire.h>
 #include <Arduino.h>
 #include <U8g2lib.h>
+#include "util.h"
 #include "clock.h"
 #include "mpu.h"
 // 计算数组尺寸
@@ -17,41 +18,12 @@
 // 显示屏类库
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/U8X8_PIN_NONE, 0, 2);
 
-enum PSTATUS
-{
-  // 下个周期退出
-  NEXT_TIME_TO_EXIT = -1,
-  // 暂停
-  PAUSE = 0,
-  // 运行中
-  RUNNING = 1
-};
-
-// 进程结构
-typedef struct Process
-{
-  // PID，系统自动分配
-  unsigned short pid;
-  // 程序指针，运行后返回当前进程的状态
-  int8_t (*run)(void);
-  // 运行周期，以毫秒为单位，要求每隔多少毫秒运行一次
-  unsigned long period;
-  // 运行状态
-  PSTATUS status;
-  // 最后运行时间
-  unsigned long last_run_time = 0;
-  // Last time run at = millis()
-  unsigned long ltra = 0;
-  // 优先级
-  uint8_t priority = 0;
-};
-
 // 线程数组，最大256个线程
 static Process processes[256];
 // 线程数量
 static uint8_t process_num = 0;
 
-uint8_t start_new_process(unsigned long period, int8_t (*run)(void), uint8_t priority);
+uint8_t start_new_process(unsigned long period, ProcessInfo (*run)(void), uint8_t priority);
 
 void setup()
 {
@@ -109,10 +81,14 @@ void loop()
 
     // 记录执行进程的时间，并执行进程
     processes[current].last_run_time = now;
-    PSTATUS state = (PSTATUS)processes[current].run();
+    ProcessInfo result = processes[current].run();
+    processes[current].period = result.period;
+    processes[current].status = result.status;
+
+    // PSTATUS state = (PSTATUS)processes[current].run();
 
     // 修改状态，如果状态是待撤离，则撤离该进程
-    if (state == NEXT_TIME_TO_EXIT)
+    if (processes[current].status == NEXT_TIME_TO_EXIT)
     {
       for (uint8_t i = current + 1; i < process_num; i++)
         processes[i - 1] = processes[i];
@@ -132,7 +108,7 @@ void loop()
  * @param priortiy 优先级
  * @returns pid 进程编号
  */
-uint8_t start_new_process(ulong period, int8_t(run)(void), uint8_t priortiy)
+uint8_t start_new_process(ulong period, ProcessInfo(run)(void), uint8_t priortiy)
 {
 
   Serial.println("start called");

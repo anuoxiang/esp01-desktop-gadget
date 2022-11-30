@@ -39,10 +39,11 @@ void connect_to_ap()
   }
 }
 
-int8_t clock_main(void)
+ProcessInfo clock_main(void)
 {
   if (!b_clock_setup)
     clock_setup();
+
   time_t rawtime;
   struct tm *timeinfo;
   time(&rawtime);
@@ -100,5 +101,9 @@ int8_t clock_main(void)
   u_long begin = millis();
   u8g2.sendBuffer();
 
-  return 1;
+  ProcessInfo result;
+
+  result.period = 1000;
+  result.status = RUNNING;
+  return result;
 }

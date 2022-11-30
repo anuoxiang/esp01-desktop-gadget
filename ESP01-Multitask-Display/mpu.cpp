@@ -11,7 +11,7 @@ void mpu_setup()
   accelgyro.initialize();
 }
 
-int8_t mpu_main(void)
+ProcessInfo mpu_main(void)
 {
   if (!b_mpu_setup)
     mpu_setup();
@@ -41,5 +41,9 @@ int8_t mpu_main(void)
     dt = 100;
   }
 
-  return 1;
+  ProcessInfo result;
+  result.period = dt;
+  result.status = RUNNING;
+
+  return result;
 }

@@ -3,8 +3,9 @@
 
 #include <MPU6050.h>
 #include <Wire.h>
+#include "util.h"
 
 void mpu_setup();
-int8_t mpu_main(void);
+ProcessInfo mpu_main(void);
 
 #endif

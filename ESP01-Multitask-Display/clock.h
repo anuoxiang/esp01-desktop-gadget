@@ -9,7 +9,7 @@
 #include <WiFiUdp.h>
 #include <ESP8266WiFiMulti.h>
 #include <ESP8266HTTPClient.h>
-
+#include "util.h"
 #define SSID "AirPort"
 #define PSK "aaabbbccc"
 #define NTPSERVER "ntp6.aliyun.com"
@@ -28,6 +28,6 @@ void clock_setup();
 void connect_to_ap();
 
 // 主过程
-int8_t clock_main();
+ProcessInfo clock_main();
 
 #endif
