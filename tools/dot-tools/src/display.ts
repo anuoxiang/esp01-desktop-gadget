@@ -13,8 +13,12 @@ const LINE_LIGHT_RATIO = 1 / 6;
 const COLOR_BACKGROUND = "black";
 const COLOR_LINE = "#888888";
 const COLOR_LINE2 = "#CCCCCC";
+// https://next.startdt.com/img/charts/%E9%85%8D%E8%89%B2%E6%96%B9%E6%A1%88-%E6%A0%87%E5%87%86%E8%89%B2.png
 const COLOR_ELEMENT_BOX = "#FBC228";
 const COLOR_CURRENT_ELEMENT_BOX = "#01CAFF";
+
+// Display支持的事件类型
+const EVENT_NAME = ["newelement", "selectelement", "delelement"];
 
 /**
  * 模拟OLED屏幕
@@ -53,7 +57,7 @@ export class Display {
     // 总宽度 = 128*(1-1/6)x + 127*(1/6)x => x = 总宽度 / [128*(5/6)+127(1/6)]
     // this.lineWidth = (cvs.width / width) * LINE_LIGHT_RATIO;
     // 调整cvs的宽和高，实质内部的像素可以有整数。
-    this.lineWidth = (cvs.width / (128 * (1 - LINE_LIGHT_RATIO) + 127 * LINE_LIGHT_RATIO)) * LINE_LIGHT_RATIO;
+    this.lineWidth = 1; //(cvs.width / (128 * (1 - LINE_LIGHT_RATIO) + 127 * LINE_LIGHT_RATIO)) * LINE_LIGHT_RATIO;
     // this.lineWidth = Math.floor(this.lineWidth);
     // cvs.width = this.lineWidth * 5 * 128 + this.lineWidth * 127;
     // cvs.height = cvs.width / (this.width / this.height);
@@ -65,21 +69,6 @@ export class Display {
     console.log("??");
     this.initGrid();
     this.bindMouse();
-
-    // cvs.addEventListener("click", ({ offsetX, offsetY }) => {
-    //   console.log("click");
-    //   // let x = offsetX
-    //   // 喷涂这个像素点区域的颜色，注意：需要把网格线的宽度考虑进去。
-    //   let x = Math.floor(offsetX / this.grid_width),
-    //     y = Math.floor(offsetY / this.grid_width);
-    //   this.ctx.fillStyle = this.color;
-    //   this.ctx.fillRect(
-    //     x * this.grid_width + (x === 0 ? 0 : this.lineWidth / 2),
-    //     y * this.grid_width + (y === 0 ? 0 : this.lineWidth / 2),
-    //     this.grid_width - (x === 0 ? this.lineWidth / 2 : this.lineWidth),
-    //     this.grid_width - (y === 0 ? this.lineWidth / 2 : this.lineWidth)
-    //   );
-    // });
   }
 
   // 是否进入检测拖动模式，即：mousedown之后就是mousemove
@@ -109,45 +98,38 @@ export class Display {
           break;
         }
       }
-
       if (movingElement < 0) {
         // 没有任何内容，可以开始建立元素框
         this.selectedElement = -1;
       } else {
-        // 表示选中这个元素，并开始拖动
-        this.selectedElement = movingElement;
       }
-      this.reDraw();
-      this.drawSelected();
     });
     // 鼠标松开
     this.cvs.addEventListener("mouseup", () => {
       this.detectMouse = false;
-      setTimeout(() => {
-        this.singleClick = true;
-      }, 1); // 统一瞬间触发，难保证click与up谁先谁后；
-      // basePoint to lastOffset 形成一个元素区域
-      // 判断是新建一个元素，还是拖动的元素
+      // 根据标准，mouseup是先于click触发，所以这里无需处理this.singleClick = true;
+
       if (movingElement < 0) {
         this.reDraw();
         if (basePoint.X === lastOffset.X || basePoint.Y === lastOffset.Y) {
           // 在头一条直线上的，没有面积，所以不做任何动作（仅重绘）
         } else {
-          let element = new DotsElement(basePoint, lastOffset);
+          let element = new DotsElement(basePoint, lastOffset, this.grid_width);
           this.elements.push(element);
           this.selectedElement = this.elements.length - 1;
           this.drawSelected();
         }
       } else {
         // 移动元素结束
-        movingElement = -1;
+        // movingElement = -1;
       }
     });
     // 鼠标移动
     this.cvs.addEventListener("mousemove", ({ offsetX, offsetY }) => {
       if (!this.detectMouse) return;
       this.singleClick = false;
-
+      // 表示选中这个元素，并开始拖动
+      this.selectedElement = movingElement;
       let offset = new Position(offsetX, offsetY, this.grid_width);
       // 只有当移动超过一个方格的时候才有必要重绘
       if (lastOffset?.X == offset.X && lastOffset?.Y == offset.Y) return;
@@ -175,10 +157,28 @@ export class Display {
     // 鼠标单击（拖动或者单击，只能出现一个动作）
     this.cvs.addEventListener("click", ({ offsetX, offsetY }) => {
       if (!this.singleClick) {
+        // 拖动后阻断信号，下一次如果没有拖动的单击鼠标则表示单击
         this.singleClick = true;
         return;
       }
-      console.log(offsetX, offsetY);
+
+      // 判断两次点击同一个元素，则是修改元素的绘图
+      if (this.selectedElement >= 0 && this.selectedElement == movingElement) {
+        // 在已经被选中的前提下，又一次被单击选择
+        this.elements[this.selectedElement].click(new Position(offsetX, offsetY));
+        this.reDraw();
+        this.drawSelected();
+      } else if (movingElement >= 0) {
+        console.log("单纯地表示选中");
+        this.selectedElement = movingElement;
+        this.reDraw();
+        this.drawSelected();
+        // 触发选中事件
+        let promises = this.events
+          .filter((e) => e.name === "selectelement")
+          .map((e) => e.callback(this.elements[this.selectedElement]));
+        Promise.all(promises);
+      }
     });
   }
 
@@ -221,6 +221,7 @@ export class Display {
       this.ctx.strokeStyle = COLOR_ELEMENT_BOX;
       this.ctx.lineWidth = 1;
       this.ctx.stroke(rect);
+      element.draw(this.ctx, this.lineWidth);
     }
   }
 
@@ -232,5 +233,25 @@ export class Display {
     this.ctx.strokeStyle = COLOR_CURRENT_ELEMENT_BOX;
     this.ctx.lineWidth = 1;
     this.ctx.stroke(rect);
+    element.draw(this.ctx, this.lineWidth);
+  }
+
+  /**
+   * Display 事件
+   * 1. 产生一个新的元素 - newelement
+   * 2. 一个元素被选中 - selectelement
+   * 3. 元素被删除 - delelement
+   */
+
+  private events: Array<{ name: string; callback: Function }> = [];
+
+  /**
+   * 绑定事件响应
+   * @param eventName 绑定的事件名称
+   * @param callback 事件对应的处理函数
+   */
+  public addEventListener(eventName: string, callback: Function): void {
+    if (EVENT_NAME.indexOf(eventName) < 0) throw new Error("Not support event name");
+    this.events.push({ name: eventName, callback });
   }
 }
