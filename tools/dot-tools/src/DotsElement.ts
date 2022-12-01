@@ -75,8 +75,7 @@ export class DotsElement {
    * @param pos 画布坐标（非网格坐标）
    */
   public click(pos: Position): void {
-    console.log("click!", pos);
-    console.log(`relative pos:${pos.X - this.pos.X},${pos.Y - this.pos.Y}`);
+    // console.log(`relative pos:${pos.X - this.pos.X},${pos.Y - this.pos.Y}`);
     switch (this.type) {
       case ElementType.DOTS: // 手绘点阵对象，点击=绘制
         // 处理网格长宽，得到换算后的点阵坐标
