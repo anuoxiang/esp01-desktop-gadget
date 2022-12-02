@@ -1,7 +1,5 @@
 import { Box, Position } from "./gadgets";
 
-const COLOR_DOT_COLOR = "#1FCA7D";
-
 // 元素类型
 export enum ElementType {
   TEXT, //文本
@@ -25,13 +23,15 @@ export class DotsElement {
   // 图片
   image?: Blob;
   // 动画
-  animate?: [];
+  animate?: Array<Blob>;
   // 绘制
   dots: Array<Position> = [];
   // 编号
   id: string;
   // 人工赋予的名称
   name: string = "";
+
+  _type: ElementType = ElementType.DOTS;
 
   /**
    * 像素点元素
@@ -40,7 +40,7 @@ export class DotsElement {
    * @param gridWidth 网格宽度
    * @param gridHeight 网格高度
    */
-  constructor(p1: Position, p2: Position, public readonly gridWidth: number = 1) {
+  constructor(p1: Position, p2: Position, public readonly gridWidth: number = 1, private dotColor: string = "#195BFF") {
     // 判断起点（坐标值小的）和重点
     this.pos = new Position(p1.X > p2.X ? p2.X : p1.X, p1.Y > p2.Y ? p2.Y : p1.Y);
     this.box = new Box(Math.abs(p1.X - p2.X), Math.abs(p1.Y - p2.Y));
@@ -51,15 +51,20 @@ export class DotsElement {
    * 对象类型
    */
   get type(): ElementType {
-    return this.text
-      ? ElementType.TEXT
-      : this.image
-      ? ElementType.IMAGE
-      : this.animate
-      ? ElementType.ANIMATE
-      : ElementType.DOTS;
+    return this._type;
   }
 
+  /**
+   * 修改元素类型
+   * 修改后需要把内部清空
+   */
+  set type(newType: ElementType) {
+    this._type = newType;
+    this.dots = [];
+    this.text = "";
+    this.image = undefined;
+    this.animate = [];
+  }
   // 是否在元素的区域中科技以
   public here(_pos: Position): Boolean {
     return (
@@ -105,7 +110,7 @@ export class DotsElement {
     switch (this.type) {
       case ElementType.DOTS:
         for (let dot of this.dots) {
-          ctx.fillStyle = COLOR_DOT_COLOR;
+          ctx.fillStyle = this.dotColor;
           ctx.fillRect(
             dot.X + this.pos.X + (dot.X + this.pos.X === 0 ? 0 : lineWidth / 2),
             dot.Y + this.pos.Y + (dot.Y + this.pos.Y === 0 ? 0 : lineWidth / 2),

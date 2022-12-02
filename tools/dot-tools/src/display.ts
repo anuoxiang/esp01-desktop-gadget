@@ -48,7 +48,8 @@ export class Display {
     public readonly width: number = 128,
     public readonly height: number = 64,
     public readonly dual_color: boolean = true,
-    public readonly color: string = "blue"
+    public readonly color: string = "blue",
+    public readonly controlPanel: HTMLElement
   ) {
     // 处理画布与屏幕的对应关系
     // 网格中，像素点的间隔计算，以0.96" SSD1306 OLED 128*64 为例：
@@ -69,6 +70,47 @@ export class Display {
     console.log("??");
     this.initGrid();
     this.bindMouse();
+    this.bindControlPanel();
+  }
+
+  /**
+   * 绑定生成控制界面s
+   */
+  private bindControlPanel(): void {
+    let typeDes = document.createTextNode("元素类型：");
+    let elementType = document.createElement<"select">("select");
+    elementType.id = "element_type";
+    elementType.disabled = true;
+    let opt1 = document.createElement("option");
+    opt1.value = "0";
+    opt1.innerText = "文本";
+    elementType.appendChild(opt1);
+
+    let opt2 = document.createElement("option");
+    opt2.value = "1";
+    opt2.innerText = "图片";
+    elementType.appendChild(opt2);
+
+    let opt3 = document.createElement("option");
+    opt3.value = "2";
+    opt3.innerText = "动画";
+    elementType.appendChild(opt3);
+
+    let opt4 = document.createElement("option");
+    opt4.value = "3";
+    opt4.innerText = "点阵";
+    elementType.appendChild(opt4);
+
+    let inputDes = document.createTextNode("输入文字：");
+    let elementContent = document.createElement<"input">("input");
+    elementContent.id = "element_content";
+    elementContent.disabled = true;
+    elementContent.type = "text";
+
+    this.controlPanel.appendChild(typeDes);
+    this.controlPanel.appendChild(elementType);
+    this.controlPanel.appendChild(inputDes);
+    this.controlPanel.appendChild(elementContent);
   }
 
   // 是否进入检测拖动模式，即：mousedown之后就是mousemove
@@ -78,7 +120,7 @@ export class Display {
   private singleClick: Boolean = true;
 
   // 绑定鼠标的拖动与点击操作
-  private bindMouse() {
+  private bindMouse(): void {
     // 点按并拖动的基础点
     let basePoint: Position;
     let lastOffset: Position;
@@ -182,6 +224,7 @@ export class Display {
     });
   }
 
+  // 重绘
   public reDraw(): void {
     this.initGrid();
     this.drawElements();
