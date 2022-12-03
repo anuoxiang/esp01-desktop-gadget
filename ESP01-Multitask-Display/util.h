@@ -1,5 +1,6 @@
 #ifndef _UTILIT_H_
 #define _UTILIT_H_
+#include <Arduino.h>
 
 enum PSTATUS
 {
@@ -36,5 +37,7 @@ typedef struct Process
   // 优先级
   uint8_t priority = 0;
 };
+
+static uint8_t turn = 0;
 
 #endif

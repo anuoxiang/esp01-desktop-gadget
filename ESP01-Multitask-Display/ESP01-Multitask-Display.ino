@@ -11,6 +11,7 @@
 #include "util.h"
 #include "clock.h"
 #include "mpu.h"
+#include "display.h"
 // 计算数组尺寸
 #define countof(a) (sizeof(a) / sizeof(a[0]))
 #define TIME_SLICE 50

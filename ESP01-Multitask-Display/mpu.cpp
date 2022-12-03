@@ -22,11 +22,13 @@ ProcessInfo mpu_main(void)
   if (gx > 20000)
   {
     Serial.println("Left");
+    turn = 0;
     dt = MAX_DELAY;
   }
   else if (gx < -20000)
   {
     Serial.println("Right");
+    turn = 1;
     dt = MAX_DELAY;
   }
   else if (gy > 20000)
