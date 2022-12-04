@@ -20,15 +20,15 @@ ProcessInfo mpu_main(void)
     mpu_setup();
   accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
   if (gx > 20000)
-  {
+  { // 向左滚动，屏幕编号增大一位
     Serial.println("Left");
-    turn = 0;
+    (turn_to_screen < SCREEN_NUM) && turn_to_screen++;
     dt = MAX_DELAY;
   }
   else if (gx < -20000)
-  {
+  { // 向右滚动，所以屏幕编号减小一位
     Serial.println("Right");
-    turn = 1;
+    turn_to_screen > 1 && turn_to_screen--;
     dt = MAX_DELAY;
   }
   else if (gy > 20000)
