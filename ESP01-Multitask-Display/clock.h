@@ -16,10 +16,10 @@
 #define SHANGHAI 28800
 #define DAY_LIGHT_OFFSET_SEC 0
 
-extern U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2;
+// 定义显示时间的屏幕编号
+#define CLOCK_SCREEN_NUM 1
 
-// 是否完成设置
-// static bool b_clock_setup = false;
+extern U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2;
 
 // 设置过程
 void clock_setup();

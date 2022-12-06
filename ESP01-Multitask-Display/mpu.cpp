@@ -22,13 +22,23 @@ ProcessInfo mpu_main(void)
   if (gx > 20000)
   { // 向左滚动，屏幕编号增大一位
     Serial.println("Left");
-    (turn_to_screen < SCREEN_NUM) && turn_to_screen++;
+    if (current_screen < SCREEN_NUM)
+    {
+      turn_to_screen = current_screen + 1;
+      offsetX = 128;
+      Serial.println("gogo.");
+    }
     dt = MAX_DELAY;
   }
   else if (gx < -20000)
   { // 向右滚动，所以屏幕编号减小一位
     Serial.println("Right");
-    turn_to_screen > 1 && turn_to_screen--;
+    if (current_screen > 1)
+    {
+      turn_to_screen = current_screen - 1;
+      offsetX = 0;
+      Serial.println("gogo..");
+    }
     dt = MAX_DELAY;
   }
   else if (gy > 20000)

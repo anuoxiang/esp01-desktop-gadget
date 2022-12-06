@@ -2,8 +2,6 @@
 #define _UTILIT_H_
 #include <Arduino.h>
 
-#define SCREEN_WIDTH 128
-
 enum PSTATUS
 {
   // 下个周期退出
@@ -39,14 +37,4 @@ typedef struct Process
   // 优先级
   uint8_t priority = 0;
 };
-
-/**
- * 切换屏幕的全局静态变量
- * 实际由屏幕控制程序操控当前屏幕
- * 屏幕的编号0,1,2...
- */
-static uint8_t turn_to_screen = 0;
-
-const uint8_t SCREEN_NUM = 2;
-
 #endif

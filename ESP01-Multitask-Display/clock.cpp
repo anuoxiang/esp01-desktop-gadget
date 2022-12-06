@@ -1,4 +1,6 @@
 #include "clock.h"
+#include "display.h"
+
 WiFiUDP ntpUDP;
 ESP8266WiFiMulti WiFiMulti;
 String weekDays[7] = {"日", "一", "二", "三", "四", "五", "六"};

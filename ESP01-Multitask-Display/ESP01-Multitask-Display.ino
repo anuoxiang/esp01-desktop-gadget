@@ -40,6 +40,8 @@ void setup()
 
   start_new_process(1000, &clock_main, 1);
   start_new_process(100, &mpu_main, 1);
+  start_new_process(50, &display_main, 1);
+  Serial.printf("tasks : %d", process_num);
 }
 
 static ulong now = 0;
