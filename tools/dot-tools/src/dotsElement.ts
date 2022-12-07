@@ -19,13 +19,13 @@ export class DotsElement {
   box: Box;
 
   // 文字
-  text?: string;
+  text: string = "";
   // 图片
   image?: Blob;
   // 动画
   animate?: Array<Blob>;
   // 绘制
-  dots: Array<Position> = [];
+  private _dots: Array<Position> = [];
   // 编号
   id: string;
   // 人工赋予的名称
@@ -60,7 +60,7 @@ export class DotsElement {
    */
   set type(newType: ElementType) {
     this._type = newType;
-    this.dots = [];
+    this._dots = [];
     this.text = "";
     this.image = undefined;
     this.animate = [];
@@ -88,11 +88,11 @@ export class DotsElement {
         // 记录到this.dots中
         let offsetPos = new Position(pos.X - this.pos.X, pos.Y - this.pos.Y, this.gridWidth, Math.floor);
 
-        let index = this.dots.findIndex((d) => d.equal(offsetPos));
+        let index = this._dots.findIndex((d) => d.equal(offsetPos));
         if (index >= 0) {
-          this.dots.splice(index, 1);
+          this._dots.splice(index, 1);
         } else {
-          this.dots.push(offsetPos);
+          this._dots.push(offsetPos);
         }
         // console.table(this.dots);
         break;
@@ -109,7 +109,7 @@ export class DotsElement {
   public draw(ctx: CanvasRenderingContext2D, lineWidth: number = 0): void {
     switch (this.type) {
       case ElementType.DOTS:
-        for (let dot of this.dots) {
+        for (let dot of this._dots) {
           ctx.fillStyle = this.dotColor;
           ctx.fillRect(
             dot.X + this.pos.X + (dot.X + this.pos.X === 0 ? 0 : lineWidth / 2),
@@ -119,8 +119,24 @@ export class DotsElement {
           );
         }
         break;
+      case ElementType.TEXT:
+        ctx.textBaseline = "top";
+        ctx.fillStyle = this.dotColor;
+        ctx.font = this.box.Y + "px serif";
+        ctx.fillText(this.text, this.pos.X, this.pos.Y);
+        break;
       default:
-        throw new Error("unimplement code .");
+        throw new Error("unimplement code ." + ElementType[this._type]);
     }
+  }
+
+  /**
+   * todo: 改写draw
+   * 除了点阵类型的对象输出私有_dots外，文字、图片，都需要重新
+   * 计算的出每个像素点是否点亮，并以Positon的格式输出
+   * 显示屏获得点阵数据直接绘制即可
+   */
+  get dots(): Array<Position> {
+    return [];
   }
 }

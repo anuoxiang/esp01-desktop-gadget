@@ -59,7 +59,7 @@ ProcessInfo clock_main(void)
   int currentHour = timeinfo->tm_hour;
   int currentMinute = timeinfo->tm_min;
 
-  u8g2.clearBuffer();
+  // u8g2.clearBuffer();
   //  u8g2_font_10x20_tn
   u8g2.setFont(u8g2_font_unifont_t_chinese2); // use chinese2 for all the glyphs of "你好世界"
 

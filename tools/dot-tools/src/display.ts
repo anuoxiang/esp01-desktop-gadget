@@ -3,7 +3,8 @@
  * Django 2022-11-16
  */
 
-import { DotsElement } from "./DotsElement";
+import { generateControlPanelForm } from "./controlPanel";
+import { DotsElement, ElementType } from "./dotsElement";
 import { Position } from "./gadgets";
 
 // 网格线与灯的宽度比例，1线5灯
@@ -77,40 +78,36 @@ export class Display {
    * 绑定生成控制界面s
    */
   private bindControlPanel(): void {
-    let typeDes = document.createTextNode("元素类型：");
-    let elementType = document.createElement<"select">("select");
-    elementType.id = "element_type";
-    elementType.disabled = true;
-    let opt1 = document.createElement("option");
-    opt1.value = "0";
-    opt1.innerText = "文本";
-    elementType.appendChild(opt1);
+    generateControlPanelForm(
+      this.controlPanel,
+      (type: ElementType) => {
+        this.elements[this.selectedElement].type = type;
+      },
+      (content: string) => {
+        this.elements[this.selectedElement].type = ElementType.TEXT;
+        this.elements[this.selectedElement].text = content;
+      }
+    );
+  }
 
-    let opt2 = document.createElement("option");
-    opt2.value = "1";
-    opt2.innerText = "图片";
-    elementType.appendChild(opt2);
+  /**
+   * 触发元素被选中时，内部（必要）事件
+   */
+  private internalOnSelected() {
+    // 操控界面解锁
+    let eleType = this.controlPanel.querySelector<"select">("select")!;
+    eleType.value = this.elements[this.selectedElement].type;
+    eleType.disabled = false;
+    let txtContent = this.controlPanel.querySelector<"input">("input")!;
+    txtContent.value = this.elements[this.selectedElement].text;
+    txtContent.disabled = false;
 
-    let opt3 = document.createElement("option");
-    opt3.value = "2";
-    opt3.innerText = "动画";
-    elementType.appendChild(opt3);
+    // 触发选中事件
+    let promises = this.events
+      .filter((e) => e.name === "selectelement")
+      .map((e) => e.callback(this.elements[this.selectedElement]));
 
-    let opt4 = document.createElement("option");
-    opt4.value = "3";
-    opt4.innerText = "点阵";
-    elementType.appendChild(opt4);
-
-    let inputDes = document.createTextNode("输入文字：");
-    let elementContent = document.createElement<"input">("input");
-    elementContent.id = "element_content";
-    elementContent.disabled = true;
-    elementContent.type = "text";
-
-    this.controlPanel.appendChild(typeDes);
-    this.controlPanel.appendChild(elementType);
-    this.controlPanel.appendChild(inputDes);
-    this.controlPanel.appendChild(elementContent);
+    return Promise.all(promises);
   }
 
   // 是否进入检测拖动模式，即：mousedown之后就是mousemove
@@ -144,6 +141,7 @@ export class Display {
         // 没有任何内容，可以开始建立元素框
         this.selectedElement = -1;
       } else {
+        // 有选择s
       }
     });
     // 鼠标松开
@@ -160,12 +158,15 @@ export class Display {
           this.elements.push(element);
           this.selectedElement = this.elements.length - 1;
           this.drawSelected();
+          // 触发选中事件
+          this.internalOnSelected();
         }
       } else {
         // 移动元素结束
         // movingElement = -1;
       }
     });
+
     // 鼠标移动
     this.cvs.addEventListener("mousemove", ({ offsetX, offsetY }) => {
       if (!this.detectMouse) return;
@@ -192,10 +193,13 @@ export class Display {
           this.elements[this.selectedElement].pos.Y - (lastOffset.Y - offset.Y)
         );
         this.drawSelected();
+        // 触发选中事件
+        this.internalOnSelected();
       }
 
       lastOffset = offset;
     });
+
     // 鼠标单击（拖动或者单击，只能出现一个动作）
     this.cvs.addEventListener("click", ({ offsetX, offsetY }) => {
       if (!this.singleClick) {
@@ -211,15 +215,11 @@ export class Display {
         this.reDraw();
         this.drawSelected();
       } else if (movingElement >= 0) {
-        console.log("单纯地表示选中");
         this.selectedElement = movingElement;
         this.reDraw();
         this.drawSelected();
         // 触发选中事件
-        let promises = this.events
-          .filter((e) => e.name === "selectelement")
-          .map((e) => e.callback(this.elements[this.selectedElement]));
-        Promise.all(promises);
+        this.internalOnSelected();
       }
     });
   }
