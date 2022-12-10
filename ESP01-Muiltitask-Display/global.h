@@ -48,7 +48,7 @@ typedef struct Display
   // PID，系统自动分配
   unsigned short pid;
   // 程序指针，运行后返回当前进程的状态
-  void (*run)(void);
+  bool (*run)(void);
 };
 
 // 进程结构

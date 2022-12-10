@@ -23,7 +23,7 @@ static uint8_t display_num = 0;
 uint8_t start_new_process(unsigned long period, ProcessInfo (*run)(void), uint8_t priority);
 
 // 新的显示进程加入队列
-uint8_t start_new_display(void (*run)(void));
+uint8_t start_new_display(bool (*run)(void));
 
 void setup()
 {
@@ -38,7 +38,7 @@ void setup()
   Wire.begin(2, 0);
 
   connect_to_ap();
-  start_new_display(&hello_main);
+  // start_new_display(&hello_main);
   start_new_display(&mycraft_main);
   Serial.printf("tasks : %d", process_num);
 }
@@ -100,12 +100,17 @@ void loop()
   }
 
   u8g2.clearBuffer();
+  bool flag = false;
   // 执行显示程序，根据当前所在的屏幕输出
   for (uint8_t i = 0; i < display_num; i++)
   {
-    displays[i].run();
+    if (displays[i].run())
+    {
+      flag = true;
+    }
   }
-  u8g2.sendBuffer();
+  if (flag)
+    u8g2.sendBuffer();
 }
 
 /**
@@ -131,7 +136,7 @@ uint8_t start_new_process(ulong period, ProcessInfo(run)(void), uint8_t priortiy
   return new_process.pid;
 }
 
-uint8_t start_new_display(void (*run)(void))
+uint8_t start_new_display(bool (*run)(void))
 {
   Display new_process;
   new_process.pid = display_num > 1 ? displays[display_num - 1].pid + 1 : 1;

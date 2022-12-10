@@ -3,6 +3,6 @@
 
 #include "global.h"
 
-void hello_main();
+bool hello_main();
 
 #endif
