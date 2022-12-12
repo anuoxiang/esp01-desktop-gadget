@@ -1,9 +1,9 @@
 /**
- * ESP01 文件读写实验
- * Django 2022-11-08
- * Reference:  https://arduino-esp8266.readthedocs.io/en/latest/filesystem.html#sdfs-and-sd
- *
- */
+   ESP01 文件读写实验
+   Django 2022-11-08
+   Reference:  https://arduino-esp8266.readthedocs.io/en/latest/filesystem.html#sdfs-and-sd
+
+*/
 
 #include <FS.h>
 #include <string.h>
@@ -24,27 +24,30 @@ void setup()
     Serial.println("FS mount failed.");
     return;
   }
-  // if (!FS.format())
-  // {
-  //   Serial.println("FS format failed.");
-  //   return;
-  // }
 
+  //  if (!FS.format())
+  //  {
+  //    Serial.println("FS format failed.");
+  //    return;
+  //  }
+  //
   Serial.println("FS mounted.");
 
-  FSInfo info;
-  FS.info(info);
-  Serial.printf("total size: %d\n", info.totalBytes);
-  Serial.flush();
-
-  // 写入一个文件，写入几个ASCII字符
-  // File f = FS.open("/hello.txt", "w");
-  // if (!f)
-  // {
-  //   Serial.println("file create failed.");
-  // }
-  // f.write("Hello world! @Django 2022-11-11");
-  // f.close();
+  //  FSInfo info;
+  //  FS.info(info);
+  //  Serial.printf("total size: %d\n", info.totalBytes);
+  //  //  Serial.flush();
+  //  //
+  //  //  写入一个文件，写入几个ASCII字符/
+  //  File f = FS.open("/hello.txt", "w");
+  //  if (!f)
+  //    Serial.println("file create failed.");
+  //  for (uint16_t i = 0; i < 1024; i++) {
+  //    for (uint8_t j = 0; j < 100; j++)
+  //      f.write("Hello world!! @Django 2022-11-11");
+  //    Serial.println(i);
+  //  }
+  //  f.close();
 
   Dir dir = FS.openDir("/");
   while (dir.next())
@@ -59,12 +62,14 @@ void setup()
       Serial.println(f.readStringUntil('\0'));
     }
   }
-  Serial.flush();
-  FS.end();
+  //  Serial.flush();
+  //  FS.end();
   // 并且
 }
 
 void loop()
 {
+  Serial.println(".");
+  delay(1000);
   // put your main code here, to run repeatedly:
 }

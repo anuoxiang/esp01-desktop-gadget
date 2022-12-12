@@ -38,8 +38,8 @@ void setup()
   Wire.begin(2, 0);
 
   connect_to_ap();
-  // start_new_display(&hello_main);
   start_new_display(&mycraft_main);
+  start_new_display(&hello_main);
   Serial.printf("tasks : %d", process_num);
 }
 
@@ -99,7 +99,7 @@ void loop()
     }
   }
 
-  u8g2.clearBuffer();
+  // u8g2.clearBuffer();
   bool flag = false;
   // 执行显示程序，根据当前所在的屏幕输出
   for (uint8_t i = 0; i < display_num; i++)
