@@ -18,6 +18,8 @@
 #define countof(a) (sizeof(a) / sizeof(a[0]))
 #define TIME_SLICE 50
 
+#define SCREEN_WIDTH 128
+
 extern U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2;
 
 // 连接到AP
@@ -47,8 +49,12 @@ typedef struct Display
 {
   // PID，系统自动分配
   unsigned short pid;
-  // 程序指针，运行后返回当前进程的状态
-  bool (*run)(void);
+  /**
+   * 显示程序函数
+   * @param offsetX 偏移量
+   * @return 是否改写屏幕内容
+   */
+  bool (*run)(int16_t offsetX);
 };
 
 // 进程结构

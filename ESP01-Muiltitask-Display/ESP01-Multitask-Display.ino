@@ -23,7 +23,7 @@ static uint8_t display_num = 0;
 uint8_t start_new_process(unsigned long period, ProcessInfo (*run)(void), uint8_t priority);
 
 // 新的显示进程加入队列
-uint8_t start_new_display(bool (*run)(void));
+uint8_t start_new_display(bool (*run)(int16_t offsetX));
 
 void setup()
 {
@@ -38,79 +38,128 @@ void setup()
   Wire.begin(2, 0);
 
   connect_to_ap();
+
   start_new_display(&mycraft_main);
   start_new_display(&hello_main);
-  Serial.printf("tasks : %d", process_num);
+
+  // Serial.printf("tasks : %d", process_num);
 }
 
-static ulong now = 0;
 // 任务管理的轮询过程
 void loop()
 {
   // Serial.println("loop...");
-  now = millis();
-  // 先执行普通进程，用于从外部（或内部）抓去需要的数据
-  uint8_t current = 0;
-  // 待执行清单：循环线程池，找到到期（应该执行）的线程
-  uint8_t task[256], max_task = 0;
-  for (uint8_t i = 0; i < process_num; i++)
+  unsigned long now, delay_max;
+  uint8_t current, task[256], max_task = 0;
+  // 临时变量
+  uint8_t i, priority_max;
+  bool flag;
+  // 处理控制屏幕的变量，屏幕的编号1,2...
+  uint8_t turn_to_screen = 1, current_screen = 1;
+  int16_t offsetX = 0;
+
+  while (1)
   {
-    // 已经过了50天，millis重新从0开始，就会出现最后一次在“未来”的假象
-    // 这时，需要重新复位所有进程池中的运行时间
-    processes[i].last_run_time_at = now < processes[i].last_run_time_at ? 0 : processes[i].last_run_time_at;
-    // Serial.printf("lrt:%d\t status:%d \t period:%d \t now:%d\t", processes[i].last_run_time, processes[i].status, processes[i].period, now);
-    if (processes[i].status == RUNNING &
-        processes[i].last_run_time_at + processes[i].period <= now)
+    // now = millis();
+    // 每间隔10秒，切换一次屏幕
+    if ((unsigned long)(millis() / 1000 - now) > 10)
     {
-      task[max_task] = i;
-      max_task++;
+      now = (unsigned long)(millis() / 1000);
+      turn_to_screen = current_screen == 0 ? 1 : 0;
     }
-  }
 
-  // 找到待执行清单的最高优先级
-  ulong delay_max = 0;
-  uint8_t priority_max = 0;
-  // Serial.printf("task: %d, process num:%d\n", max_task, process_num);
-  if (max_task > 0)
-  {
-    current = task[0];
-    // 找到最高优先级等待时间最久的进程
-    for (uint8_t i = 1; i < max_task; i++)
-      if (processes[current].period < processes[task[i]].period |
-          (processes[current].period == processes[task[i]].period &
-           processes[current].last_run_time_at + processes[current].priority <
-               processes[task[i]].last_run_time_at + processes[task[i]].priority))
-        current = task[i];
+    // 先执行普通进程，用于从外部（或内部）抓去需要的数据
+    current = 0;
+    // 待执行清单：循环线程池，找到到期（应该执行）的线程
+    task[256], max_task = 0;
 
-    // 记录执行进程的时间，并执行进程
-    processes[current].last_run_time_at = now;
-    ProcessInfo result = processes[current].run();
-    processes[current].period = result.period;
-    processes[current].status = result.status;
-
-    // PSTATUS state = (PSTATUS)processes[current].run();
-
-    // 修改状态，如果状态是待撤离，则撤离该进程
-    if (processes[current].status == NEXT_TIME_TO_EXIT)
+    for (i = 0; i < process_num; i++)
     {
-      for (uint8_t i = current + 1; i < process_num; i++)
-        processes[i - 1] = processes[i];
-      process_num--;
+      // 已经过了50天，millis重新从0开始，就会出现最后一次在“未来”的假象
+      // 这时，需要重新复位所有进程池中的运行时间
+      processes[i].last_run_time_at = now < processes[i].last_run_time_at ? 0 : processes[i].last_run_time_at;
+      // Serial.printf("lrt:%d\t status:%d \t period:%d \t now:%d\t", processes[i].last_run_time, processes[i].status, processes[i].period, now);
+      if (processes[i].status == RUNNING &
+          processes[i].last_run_time_at + processes[i].period <= now)
+      {
+        task[max_task] = i;
+        max_task++;
+      }
     }
-  }
 
-  // u8g2.clearBuffer();
-  bool flag = false;
-  // 执行显示程序，根据当前所在的屏幕输出
-  for (uint8_t i = 0; i < display_num; i++)
-  {
-    if (displays[i].run())
+    // 找到待执行清单的最高优先级
+    delay_max = 0;
+    priority_max = 0;
+    // Serial.printf("task: %d, process num:%d\n", max_task, process_num);
+    if (max_task > 0)
     {
-      flag = true;
+      current = task[0];
+      // 找到最高优先级等待时间最久的进程
+      for (uint8_t i = 1; i < max_task; i++)
+        if (processes[current].period < processes[task[i]].period |
+            (processes[current].period == processes[task[i]].period &
+             processes[current].last_run_time_at + processes[current].priority <
+                 processes[task[i]].last_run_time_at + processes[task[i]].priority))
+          current = task[i];
+
+      // 记录执行进程的时间，并执行进程
+      processes[current].last_run_time_at = now;
+      ProcessInfo result = processes[current].run();
+      processes[current].period = result.period;
+      processes[current].status = result.status;
+
+      // PSTATUS state = (PSTATUS)processes[current].run();
+
+      // 修改状态，如果状态是待撤离，则撤离该进程
+      if (processes[current].status == NEXT_TIME_TO_EXIT)
+      {
+        for (uint8_t i = current + 1; i < process_num; i++)
+          processes[i - 1] = processes[i];
+        process_num--;
+      }
     }
-  }
-  if (flag)
+
+    // u8g2.clearBuffer();
+    flag = false;
+    // 执行显示程序，根据当前所在的屏幕输出
+    // for (uint8_t i = 0; i < display_num; i++)
+    // {
+    if (turn_to_screen != current_screen)
+    {
+      if (turn_to_screen > current_screen)
+      {
+        // 左向移动，offsetX = 128 -> 0
+        Serial.print("turn left:");
+        offsetX--;
+        displays[turn_to_screen].run(offsetX);
+        displays[current_screen].run(offsetX - SCREEN_WIDTH);
+      }
+      else
+      {
+        // 右向移动，offsetX = 0 -> 128
+        Serial.print("turn right:");
+        offsetX++;
+        displays[turn_to_screen].run(offsetX - SCREEN_WIDTH);
+        displays[current_screen].run(offsetX);
+      }
+      Serial.println(offsetX);
+      if (offsetX == 0 || offsetX == SCREEN_WIDTH)
+      {
+        Serial.println("done");
+        // 如果移动到了临界点，说明已经移动到既定位置
+        current_screen = turn_to_screen;
+      }
+    }
+    else
+    {
+      flag = displays[current_screen].run(0);
+    }
+    delay(10);
+
+    // }
+    // if (flag)
     u8g2.sendBuffer();
+  }
 }
 
 /**
@@ -136,7 +185,7 @@ uint8_t start_new_process(ulong period, ProcessInfo(run)(void), uint8_t priortiy
   return new_process.pid;
 }
 
-uint8_t start_new_display(bool (*run)(void))
+uint8_t start_new_display(bool (*run)(int16_t offsetX))
 {
   Display new_process;
   new_process.pid = display_num > 1 ? displays[display_num - 1].pid + 1 : 1;

@@ -3,6 +3,6 @@
 
 #include "global.h"
 
-bool hello_main();
+bool hello_main(int16_t offsetX);
 
 #endif
