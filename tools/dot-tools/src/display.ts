@@ -30,7 +30,7 @@ export class Display {
   // canvas.context
   public readonly ctx: CanvasRenderingContext2D;
   // 网格尺寸
-  public readonly grid_width: number;
+  public readonly gridWidth: number;
   // 当前激活状态的元素对象
   public selectedElement: number = -1;
   // 在画布上的所有元素
@@ -66,7 +66,7 @@ export class Display {
     //console.log(this.lineWidth, this.lineWidth * 5 * 128 + this.lineWidth * 127);
 
     this.ctx = cvs.getContext("2d")!;
-    this.grid_width = cvs.width / width;
+    this.gridWidth = cvs.width / width;
     console.log(cvs.width, cvs.height);
     console.log("??");
     this.initGrid();
@@ -81,11 +81,11 @@ export class Display {
     generateControlPanelForm(
       this.controlPanel,
       (type: ElementType) => {
-        this.elements[this.selectedElement].type = type;
+        // this.elements[this.selectedElement].type = type;
       },
       (content: string) => {
-        this.elements[this.selectedElement].type = ElementType.TEXT;
-        this.elements[this.selectedElement].text = content;
+        // this.elements[this.selectedElement].type = ElementType.TEXT;
+        this.elements[this.selectedElement].text = { text: content, fontName: "宋体" };
       }
     );
   }
@@ -96,10 +96,10 @@ export class Display {
   private internalOnSelected() {
     // 操控界面解锁
     let eleType = this.controlPanel.querySelector<"select">("select")!;
-    eleType.value = this.elements[this.selectedElement].type;
+    eleType.value = this.elements[this.selectedElement].type.toString();
     eleType.disabled = false;
     let txtContent = this.controlPanel.querySelector<"input">("input")!;
-    txtContent.value = this.elements[this.selectedElement].text;
+    txtContent.value = this.elements[this.selectedElement].text?.text ?? "";
     txtContent.disabled = false;
 
     // 触发选中事件
@@ -127,7 +127,7 @@ export class Display {
     // 鼠标按下
     this.cvs.addEventListener("mousedown", ({ offsetX, offsetY }) => {
       this.detectMouse = true;
-      basePoint = new Position(offsetX, offsetY, this.grid_width);
+      basePoint = new Position(offsetX, offsetY, this.gridWidth);
       lastOffset = basePoint;
       // 判断当前坐标有没有元素
       movingElement = -1;
@@ -154,7 +154,7 @@ export class Display {
         if (basePoint.X === lastOffset.X || basePoint.Y === lastOffset.Y) {
           // 在头一条直线上的，没有面积，所以不做任何动作（仅重绘）
         } else {
-          let element = new DotsElement(basePoint, lastOffset, this.grid_width);
+          let element = new DotsElement(basePoint, lastOffset, this.gridWidth);
           this.elements.push(element);
           this.selectedElement = this.elements.length - 1;
           this.drawSelected();
@@ -173,7 +173,7 @@ export class Display {
       this.singleClick = false;
       // 表示选中这个元素，并开始拖动
       this.selectedElement = movingElement;
-      let offset = new Position(offsetX, offsetY, this.grid_width);
+      let offset = new Position(offsetX, offsetY, this.gridWidth);
       // 只有当移动超过一个方格的时候才有必要重绘
       if (lastOffset?.X == offset.X && lastOffset?.Y == offset.Y) return;
 
@@ -240,16 +240,16 @@ export class Display {
     this.ctx.beginPath();
     this.ctx.strokeStyle = COLOR_LINE;
     for (let i = 0; i < this.width - 1; i++) {
-      this.ctx.moveTo((1 + i) * this.grid_width, 0);
-      this.ctx.lineTo((1 + i) * this.grid_width, this.cvs.height);
+      this.ctx.moveTo((1 + i) * this.gridWidth, 0);
+      this.ctx.lineTo((1 + i) * this.gridWidth, this.cvs.height);
     }
     this.ctx.stroke();
 
     for (let i = 0; i < this.height - 1; i++) {
       this.ctx.beginPath();
       this.ctx.strokeStyle = this.dual_color && i === 15 ? COLOR_LINE2 : COLOR_LINE;
-      this.ctx.moveTo(0, (i + 1) * this.grid_width);
-      this.ctx.lineTo(this.cvs.width, (i + 1) * this.grid_width);
+      this.ctx.moveTo(0, (i + 1) * this.gridWidth);
+      this.ctx.lineTo(this.cvs.width, (i + 1) * this.gridWidth);
       this.ctx.stroke();
     }
   }
@@ -264,7 +264,8 @@ export class Display {
       this.ctx.strokeStyle = COLOR_ELEMENT_BOX;
       this.ctx.lineWidth = 1;
       this.ctx.stroke(rect);
-      element.draw(this.ctx, this.lineWidth);
+      // element.draw(this.ctx, this.lineWidth);
+      this.drawDots(element.pos, this.lineWidth, element.dots);
     }
   }
 
@@ -276,7 +277,27 @@ export class Display {
     this.ctx.strokeStyle = COLOR_CURRENT_ELEMENT_BOX;
     this.ctx.lineWidth = 1;
     this.ctx.stroke(rect);
-    element.draw(this.ctx, this.lineWidth);
+    // element.draw(this.ctx, this.lineWidth);
+    this.drawDots(element.pos, this.lineWidth, element.dots);
+  }
+
+  /**
+   * 绘制像素点
+   * @param offset 偏移基点位置
+   * @param lineWidth 网格的线宽度
+   * @param dots 点阵数组
+   */
+  private drawDots(offset: Position, lineWidth: number, dots: Array<Position>) {
+    for (let dot of dots) {
+      // todo: 如果是双区显示屏，则表示为不同的颜色
+      this.ctx.fillStyle = "#195BFF"; //this.dotColor;
+      this.ctx.fillRect(
+        dot.X + offset.X + (dot.X + offset.X === 0 ? 0 : lineWidth / 2),
+        dot.Y + offset.Y + (dot.Y + offset.Y === 0 ? 0 : lineWidth / 2),
+        this.gridWidth - (dot.X + offset.X === 0 ? lineWidth / 2 : lineWidth),
+        this.gridWidth - (dot.Y + offset.Y === 0 ? lineWidth / 2 : lineWidth)
+      );
+    }
   }
 
   /**
